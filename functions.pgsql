@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION get_listener_hours ( start_timestamp timestamptz, end_timestamp timestamptz ) RETURNS numeric AS $$
+CREATE OR REPLACE FUNCTION get_listener_hours ( start_timestamp timestamptz, end_timestamp timestamptz, mount_point varchar ) RETURNS numeric AS $$
 DECLARE
     listener_hours NUMERIC;
 BEGIN
