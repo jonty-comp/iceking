@@ -1,0 +1,10 @@
+[main]
+filename = /var/log/icecast2/access.log
+timeout = 0.5
+
+[database]
+host = localhost
+port = 5432
+db_name = icecast_logs
+user = icecast_user
+password = icecast_password

@@ -1,11 +1,9 @@
 #!/usr/bin/python3
-import sys, time, os, re, string, psycopg2
+import sys, time, os, re, string, configparser, psycopg2
 from collections import defaultdict, namedtuple
 from daemon import Daemon
 
 class IceKing(Daemon):
-
-	filename = '/var/log/icecast2/access.log'
 
 	format = re.compile( 
 		r"(?P<host>[\d\.]+)\s" 
@@ -23,13 +21,15 @@ class IceKing(Daemon):
 		['host', 'identity', 'user', 'time', 'request',
 		'status', 'bytes', 'referer', 'user_agent'])
 
+	timeout = 0.5
+
 	def parse(self, line):
 		match = self.format.match(line)
 		if match:
 			return self.LogItem( **match.groupdict() )
 
-	def connect(self):
-		conn = psycopg2.connect(host='dbserver', database='icecast_logs', user='icecast_user', password='icecast_password')
+	def connect(self, host, port, db, user, pw):
+		conn = psycopg2.connect(host=host, port=port, database=db, user=user, password=pw)
 		return conn
 
 	def get_mount_point(self, mount_point):
@@ -93,7 +93,7 @@ class IceKing(Daemon):
 			where = file.tell()
 			line = file.readline()
 			if not line:
-				time.sleep(0.5)
+				time.sleep(self.timeout)
 				file.seek(where)
 			else:
 				data = self.parse(line)
@@ -105,9 +105,20 @@ class IceKing(Daemon):
 					id = self.log(data.host, mount, ref, ua, data.bytes)
 
 	def run(self):
-		self.db = self.connect()
+		config = configparser.SafeConfigParser()
+		config.read('config.ini')
+
+		self.db = self.connect(
+			config.get('database', 'host'),
+			config.get('database','port'),
+			config.get('database','db_name'),
+			config.get('database','user'),
+			config.get('database', 'password')
+		)
+
 		self.cur = self.db.cursor()
-		file = self.open_file(self.filename)
+		file = self.open_file(config.get('main','filename'))
+		self.timeout = config.getfloat('main','timeout')
 		self.read_loop(file)
 
 if __name__ == "__main__":
