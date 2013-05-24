@@ -10,5 +10,5 @@ log_level = warning
 host = localhost
 port = 5432
 db_name = icecast_logs
-user = icecast_user
-password = icecast_password
+user = iceking
+password = iceking_password
