@@ -70,8 +70,8 @@ class IceKing(Daemon):
 			id = self.cur.fetchone()[0]
 			return id
 
-	def log(self, ip, mount, ref, ua, bytes):
-		self.cur.execute('INSERT INTO log (ip, mount_point_id, referer_id, user_agent_id, bytes) VALUES (%s, %s, %s, %s, %s) RETURNING id', [ip, mount, ref, ua, bytes])
+	def log(self, ip, datetime, mount, ref, ua, bytes):
+		self.cur.execute('INSERT INTO log (ip, timestamp, mount_point_id, referer_id, user_agent_id, bytes) VALUES (%s, %s::timestamptz, %s, %s, %s, %s) RETURNING id', [ip, datetime, mount, ref, ua, bytes])
 		id = self.cur.fetchone()[0]
 		if id:
 			self.db.commit()
@@ -87,7 +87,7 @@ class IceKing(Daemon):
 		if mount is not None:
 			ua = self.get_or_add_ua(data.user_agent)
 			ref = self.get_or_add_ref(data.referer)
-			id = self.log(data.host, mount, ref, ua, data.bytes)
+			id = self.log(data.host, data.time, mount, ref, ua, data.bytes)
 
 	def open_file(self, filename):
 		file = open(filename, 'r')
