@@ -1,6 +1,8 @@
 [main]
 filename = /var/log/icecast2/access.log
 timeout = 0.5
+process_all = True
+watch = True
 
 [database]
 host = localhost

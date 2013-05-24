@@ -78,31 +78,39 @@ class IceKing(Daemon):
 		else:
 			raise Exception('cannot log row: %s %s %s %s %s' % (id, mount, ref, ua, bytes))
 
+	def process_line(self, line):
+		data = self.parse(line)
+		print(line)
+		mount = self.get_mount_point(data.request)
+		if mount is not None:
+			ua = self.get_or_add_ua(data.user_agent)
+			ref = self.get_or_add_ref(data.referer)
+			id = self.log(data.host, mount, ref, ua, data.bytes)
+
 
 	def open_file(self, filename):
 		file = open(filename, 'r')
-
-		st_results = os.stat(filename)
-		st_size = st_results[6]
-		file.seek(st_size)
-
 		return file
 
 	def read_loop(self, file):
-		while 1:
-			where = file.tell()
-			line = file.readline()
-			if not line:
-				time.sleep(self.timeout)
-				file.seek(where)
-			else:
-				data = self.parse(line)
-				print(line)
-				mount = self.get_mount_point(data.request)
-				if mount is not None:
-					ua = self.get_or_add_ua(data.user_agent)
-					ref = self.get_or_add_ref(data.referer)
-					id = self.log(data.host, mount, ref, ua, data.bytes)
+		if self.process_all:
+			for line in file:
+				self.process_line(line)
+
+		if self.watch:
+			st_results = os.stat(file.name)
+			st_size = st_results[6]
+			file.seek(st_size)
+
+			while 1:
+				where = file.tell()
+				line = file.readline()
+				if not line:
+					time.sleep(self.timeout)
+					file.seek(where)
+				else:
+					self.process_line(line)
+
 
 	def run(self):
 		config = configparser.SafeConfigParser()
@@ -119,6 +127,8 @@ class IceKing(Daemon):
 		self.cur = self.db.cursor()
 		file = self.open_file(config.get('main','filename'))
 		self.timeout = config.getfloat('main','timeout')
+		self.process_all = config.getboolean('main', 'process_all')
+		self.watch = config.getboolean('main','watch')
 		self.read_loop(file)
 
 if __name__ == "__main__":
