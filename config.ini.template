@@ -3,6 +3,8 @@ filename = /var/log/icecast2/access.log
 timeout = 0.5
 process_all = True
 watch = True
+log = /var/log/iceking.log
+log_level = warning
 
 [database]
 host = localhost

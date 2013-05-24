@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import sys, time, os, re, string, configparser, psycopg2
+import sys, time, os, re, string, configparser, logging, psycopg2
 from collections import defaultdict, namedtuple
 from daemon import Daemon
 
@@ -115,6 +115,39 @@ class IceKing(Daemon):
 	def run(self):
 		config = configparser.SafeConfigParser()
 		config.read('config.ini')
+
+		logfile = config.get('main','log')
+
+		if not logfile:
+			import os.getcwd
+			logfile = '%s/iceking.log' % os.getcwd()
+
+		loglevel = config.get('main','log_level')
+
+		if loglevel == 'critical':
+			loglevel = logging.CRITICAL
+		elif loglevel == 'error':
+			loglevel = logging.ERROR
+		elif loglevel == 'warning':
+			loglevel = logging.WARNING
+		elif loglevel == 'info':
+			loglevel = logging.INFO
+		elif loglevel == 'debug':
+			loglevel = logging.DEBUG
+		else:
+			loglevel = logging.WARNING
+
+		logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', filename=logfile, level=logging.INFO)
+		logging.info('IceKing starting')
+
+		logger = logging.getLogger('root')
+		logger.setLevel(loglevel)
+
+		if sys.argv[1] == 'no-daemon':
+			log_con = logging.StreamHandler()
+			log_con.setLevel(loglevel)
+			log_con.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s'))
+			logger.addHandler(log_con)
 
 		self.db = self.connect(
 			config.get('database', 'host'),
