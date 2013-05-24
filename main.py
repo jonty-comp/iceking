@@ -22,6 +22,7 @@ class IceKing(Daemon):
 		'status', 'bytes', 'referer', 'user_agent'])
 
 	timeout = 0.5
+	logger = None
 
 	def parse(self, line):
 		match = self.format.match(line)
@@ -50,7 +51,7 @@ class IceKing(Daemon):
 				self.db.commit()
 				return id
 			else:
-				raise Exception('cannot add user-agent: %s' % ua)
+				logger.error('Cannot add user-agent: %s', ua)
 		else:
 			id = self.cur.fetchone()[0]
 			return id
@@ -64,7 +65,7 @@ class IceKing(Daemon):
 				self.db.commit()
 				return id
 			else:
-				raise Exception('cannot add referer: %s' % url)
+				logger.error('cannot add referer: %s', url)
 		else:
 			id = self.cur.fetchone()[0]
 			return id
@@ -76,17 +77,17 @@ class IceKing(Daemon):
 			self.db.commit()
 			return id
 		else:
-			raise Exception('cannot log row: %s %s %s %s %s' % (id, mount, ref, ua, bytes))
+			logger.error('Cannot log row: %s %s %s %d', mount, ref, ua, bytes)
 
 	def process_line(self, line):
+		line = line.rstrip('\n')
+		self.logger.debug(line)
 		data = self.parse(line)
-		print(line)
 		mount = self.get_mount_point(data.request)
 		if mount is not None:
 			ua = self.get_or_add_ua(data.user_agent)
 			ref = self.get_or_add_ref(data.referer)
 			id = self.log(data.host, mount, ref, ua, data.bytes)
-
 
 	def open_file(self, filename):
 		file = open(filename, 'r')
@@ -94,12 +95,16 @@ class IceKing(Daemon):
 
 	def read_loop(self, file):
 		if self.process_all:
+			self.logger.info('Logging entire contents of %s to database.', file.name)
 			for line in file:
 				self.process_line(line)
 
 		if self.watch:
+			self.logger.info('Watching %s for new lines to log to database...', file.name)
 			st_results = os.stat(file.name)
 			st_size = st_results[6]
+
+			self.logger.debug('%s size is %d bytes, moving to end and watching.', file.name, st_size)
 			file.seek(st_size)
 
 			while 1:
@@ -138,16 +143,16 @@ class IceKing(Daemon):
 			loglevel = logging.WARNING
 
 		logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', filename=logfile, level=logging.INFO)
-		logging.info('IceKing starting...')
+		self.logger = logging.getLogger('root')
 
-		logger = logging.getLogger('root')
-		logger.setLevel(loglevel)
+		self.logger.info('IceKing starting...')
+		self.logger.setLevel(loglevel)
 
 		if sys.argv[1] == 'no-daemon':
 			log_con = logging.StreamHandler()
 			log_con.setLevel(loglevel)
 			log_con.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s'))
-			logger.addHandler(log_con)
+			self.logger.addHandler(log_con)
 
 		self.db = self.connect(
 			config.get('database', 'host'),
@@ -165,15 +170,13 @@ class IceKing(Daemon):
 		self.read_loop(file)
 
 	def stop(self):
-		logger = logging.getLogger('root')
-		logger.setLevel(logging.INFO)
-		logging.info('Shutting down.')
+		self.logger.setLevel(logging.INFO)
+		self.logger.info('Shutting down.')
 		super(Daemon, self).stop()
 
 	def restart(self):
-		logger = logging.getLogger('root')
-		logger.setLevel(logging.INFO)
-		logging.info('Restarting...')
+		self.logger.setLevel(logging.INFO)
+		self.logger.info('Restarting...')
 		super(Daemon, self).restart()
 
 if __name__ == "__main__":
