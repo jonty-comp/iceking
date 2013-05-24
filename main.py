@@ -138,7 +138,7 @@ class IceKing(Daemon):
 			loglevel = logging.WARNING
 
 		logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', filename=logfile, level=logging.INFO)
-		logging.info('IceKing starting')
+		logging.info('IceKing starting...')
 
 		logger = logging.getLogger('root')
 		logger.setLevel(loglevel)
@@ -164,8 +164,21 @@ class IceKing(Daemon):
 		self.watch = config.getboolean('main','watch')
 		self.read_loop(file)
 
+	def stop(self):
+		logger = logging.getLogger('root')
+		logger.setLevel(logging.INFO)
+		logging.info('Shutting down.')
+		super(Daemon, self).stop()
+
+	def restart(self):
+		logger = logging.getLogger('root')
+		logger.setLevel(logging.INFO)
+		logging.info('Restarting...')
+		super(Daemon, self).restart()
+
 if __name__ == "__main__":
 	daemon = IceKing('/var/run/iceking.pid')
+
 	if len(sys.argv) == 2:
 			if 'start' == sys.argv[1]:
 				daemon.start()
