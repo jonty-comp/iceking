@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import sys, time, os, re, string, configparser, logging, psycopg2
+from stat import ST_INO
 from collections import defaultdict, namedtuple
 from daemon import Daemon
 
@@ -94,6 +95,7 @@ class IceKing(Daemon):
 		return file
 
 	def read_loop(self, file):
+		filename = file.name
 		if self.process_all:
 			self.logger.info('Logging entire contents of %s to database.', file.name)
 			for line in file:
@@ -111,8 +113,15 @@ class IceKing(Daemon):
 				where = file.tell()
 				line = file.readline()
 				if not line:
+					inode = os.fstat(file.fileno())[ST_INO]
+					inode2 = os.stat(filename)[ST_INO]
+					if inode != inode2:
+						self.logger.info('Access log has been rotated, re-opening new file.')
+						file.close()
+						file = self.open_file(filename)
+					else:
+						file.seek(where)
 					time.sleep(self.timeout)
-					file.seek(where)
 				else:
 					self.process_line(line)
 
