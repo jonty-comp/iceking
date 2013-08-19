@@ -41,7 +41,7 @@ ALTER TABLE public.log OWNER TO icecast;
 
 CREATE TABLE mount_points (
     id integer NOT NULL,
-    mount_point character varying(255) NOT NULL,
+    mount_point character varying NOT NULL,
     bitrate integer NOT NULL,
     date_added timestamp with time zone DEFAULT now() NOT NULL,
     date_retired timestamp with time zone,
@@ -57,7 +57,7 @@ ALTER TABLE public.mount_points OWNER TO icecast;
 
 CREATE TABLE referers (
     id integer NOT NULL,
-    url character varying(255)
+    url character varying
 );
 
 
@@ -69,7 +69,7 @@ ALTER TABLE public.referers OWNER TO icecast;
 
 CREATE TABLE user_agents (
     id integer NOT NULL,
-    ua_string character varying(255)
+    ua_string character varying
 );
 
 
