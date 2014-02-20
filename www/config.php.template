@@ -1,0 +1,9 @@
+<?php
+
+define("DATABASE_HOST", "localhost");
+define("DATABASE_PORT", "5432");
+define("DATABASE_NAME", "icecast_logs");
+define("DATABASE_USER", "iceking");
+define("DATABASE_PASS", "iceking_password");
+
+?>

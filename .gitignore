@@ -36,3 +36,5 @@ nosetests.xml
 
 # config file
 config.ini
+www/config.php
+
