@@ -68,10 +68,52 @@ class APIController {
 	 */
 	public function stats_between($mount,$start,$end) {
 		$mount = MountPoints::get_by_id($mount);
+		if(!is_numeric($start)) $start = strtotime($start);
+		if(!is_numeric($end)) $end = strtotime($end);
+
 		$stats = LogItems::get_stats_between_timestamps($mount, $start, $end);
 		$stats["start"] = $start;
 		$stats["end"] = $end;
 		return $stats;
+	}
+
+	/**
+	 * Google Graph compatible output
+	 * Listener hours on a mount
+	 * between two timestamps
+	 * with granularity in seconds
+	 *
+	 * @url GET /graph/stats/$mount/$start/$end/$granularity
+	 */
+	public function graph_hours_between($mount,$start,$end,$granularity) {
+		$mount = MountPoints::get_by_id($mount);
+		$graph = array(
+			"cols" => array(
+				array("id" => "", "label" => "time", "pattern" => "", "type" => "string"),
+				array("id" => "", "label" => "hours", "pattern" => "", "type" => "number")
+			)
+		);
+		
+		if(!is_numeric($start)) $start = strtotime($start);
+		if(!is_numeric($end)) $end = strtotime($end);
+
+		for($i = $start; $i <= $end; $i += $granularity) {		
+			$stats = LogItems::get_stats_between_timestamps($mount, $i, $i + $granularity);
+			$graph["rows"][] = array(
+				"c" => array(
+					array(
+						"v" => date("D j M h:i", $i),
+						"f" => NULL
+					),
+					array(
+						"v" => $stats["hours"],
+						"f" => NULL
+					)
+				)
+			);
+		}
+
+		return $graph;
 	}
 }
 
