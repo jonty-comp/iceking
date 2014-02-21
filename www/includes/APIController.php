@@ -58,6 +58,21 @@ class APIController {
 		$ua = UserAgents::get_by_id($id);
 		return @get_browser($ua->ua_string);
 	}
+
+	/**
+	 * Hours, connections and general stats
+	 * on a mount
+	 * between two timestamps
+	 *
+	 * @url GET /info/stats/$mount/$start/$end
+	 */
+	public function stats_between($mount,$start,$end) {
+		$mount = MountPoints::get_by_id($mount);
+		$stats = LogItems::get_stats_between_timestamps($mount, $start, $end);
+		$stats["start"] = $start;
+		$stats["end"] = $end;
+		return $stats;
+	}
 }
 
 ?>

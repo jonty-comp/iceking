@@ -77,6 +77,19 @@ class LogItems {
 
 	public static function get_by_id($id) { return DB::select("* FROM log WHERE id = :id", $id, "LogItem", false); }
 
+	public static function get_between_timestamps($mount, $start, $end) {
+		$start = date("Y-m-d H:i:s O", $start);
+		$end = date("Y-m-d H:i:s O", $end);
+		return DB::select("* FROM log WHERE mount_point_id = :mount_point_id AND timestamp BETWEEN :start AND :end", array("mount_point_id"=>$mount->id, "start" => $start, "end" => $end), "LogItem", true);
+	}
+
+	public static function get_stats_between_timestamps($mount, $start, $end) {
+		$start = date("Y-m-d H:i:s O", $start);
+		$end = date("Y-m-d H:i:s O", $end);
+		$bitrate = $mount->bitrate;
+		$stats = DB::select("round(sum(bytes) / 1024 / max(:bitrate / 8) / (60 * 60), 2) AS hours, COUNT(*) AS connections, COUNT(DISTINCT ip) AS unique FROM log WHERE mount_point_id = :mount_point_id AND timestamp BETWEEN :start AND :end", array("bitrate" => $bitrate, "mount_point_id"=>$mount->id, "start" => $start, "end" => $end));
+		return $stats;
+	}
 }
 
 ?>
